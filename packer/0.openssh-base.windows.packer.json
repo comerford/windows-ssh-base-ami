@@ -1,0 +1,47 @@
+{
+    "builders": [{
+        "type": "amazon-ebs",
+        "region": "eu-west-1",
+        "source_ami_filter": {
+            "filters": {
+                "virtualization-type": "hvm",
+                "name": "Windows_Server-2019-English-Full-Base-*",
+                "root-device-type": "ebs"
+            },
+            "owners": [
+                "amazon"
+            ],
+            "most_recent": true
+        },
+        "instance_type": "c5a.large",
+        "ami_name": "windows-base-openssh-{{timestamp}}",
+        "ami_description": "Base Windows with OpenSSH installed",
+        "user_data_file": "../support/enable_winrm.ps1",
+        "communicator": "winrm",
+        "winrm_username": "Administrator",
+        "winrm_insecure": true,
+        "winrm_use_ssl": true,
+        "force_delete_snapshot": true,
+        "ebs_optimized": true
+    }],
+    "provisioners": [{
+            "type": "ansible",
+            "playbook_file": "../ansible/openssh.windows.ansible.yml",
+            "user": "Administrator",
+            "use_proxy": false,
+            "extra_arguments": [
+                "-e",
+                "ansible_winrm_server_cert_validation=ignore"
+            ]
+        },
+        {
+            "type": "powershell",
+            "inline": [
+                "C:/ProgramData/Amazon/EC2-Windows/Launch/Scripts/InitializeInstance.ps1 -Schedule",
+                "C:/ProgramData/Amazon/EC2-Windows/Launch/Scripts/SysprepInstance.ps1 -NoShutdown",
+                "wget https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1 -OutFile Undo-WinRMConfig.ps1",
+                "./Undo-WinRMConfig.ps1"
+            ]
+        }
+    ]
+}

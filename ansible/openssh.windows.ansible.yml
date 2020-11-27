@@ -1,0 +1,43 @@
+- name: Install Choco/SSH
+  hosts: default
+  gather_facts: false
+
+  tasks:
+    # Needed for the next step
+    - name: Install Chocolatey Package Manager
+      win_chocolatey:
+        name: chocolatey
+        state: present
+
+    # Needed to fix a bug with newest Chocolatey
+    - name: Fix Chocolatey Exit Codes for Ansible Compatibility
+      win_chocolatey_feature:
+        name: useEnhancedExitCodes
+        state: disabled
+
+    - name: Install OpenSSH
+      win_chocolatey:
+        name: openssh
+        package_params: /SSHServerFeature
+        state: present
+
+    - name: set the default shell to PowerShell
+      win_regedit:
+        path: HKLM:\SOFTWARE\OpenSSH
+        name: DefaultShell
+        data: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+        type: string
+        state: present
+
+    - name: copy SSH public keys - shared
+      win_copy:
+        src: ../support/administrators_authorized_keys
+        dest: C:\ProgramData\ssh\administrators_authorized_keys
+    
+    - name: copy key permissions script
+      win_copy:
+        src: ./support/fixkeypermissions.ps1
+        dest: C:\ProgramData\ssh\fixkeypermissions.ps1
+
+    - name: run authorized keys permission fix
+      win_shell: C:\ProgramData\ssh\fixkeypermissions.ps1
