@@ -20,14 +20,14 @@ The WinRM configuration scripts and the [ConfigureRemotingForAnsible.ps1](https:
 
 There are pre-requisites, of course. You must have an AWS account, AWS credentials configured, Ansible and Packer installed, sufficient permissions on the account to create images etc. My own usage of this has all been via WSL2 on Windows using Ubuntu 20.04 (Packer 1.6.0 and Ansible 2.9.6 for reference) - using anything else your mileage may vary.
 
-Once you have all the pre-requisites, then the usage is very straightforward. You clone the repo, then run:
+Once you have all the pre-requisites, and you confirm that you are running this in the region you desire (the example defaults to eu-west-1) then the usage is very straightforward. You clone the repo, then from the root of the repo run:
 
 ```
 cd packer
 packer build 0.openssh-base.windows.packer.json 
 ```
 
-Once complete you will have a windows-base-openssh-timestamp AMI available in your AWS account to use as a base for subsequent builds.
+That's it - once complete you will have a windows-base-openssh-timestamp AMI available in your AWS account to use as a base for subsequent builds.
 
 To help you get started there is an example of a packer file using it to create an [image with Visual Studio 2019 installed](https://github.com/comerford/windows-ssh-base-ami/blob/main/packer/1.vs2019.windows.packer.json) for reference. Please note that this will not run as-is, the ansible playbooks are not included as they are beyond the scope of this repo. It also expects an `SSH_KEY_FILE_PATH` variable to be set, the account information has been replaced with meaningless digits etc. It still serves as a good starting/reference point.
 
