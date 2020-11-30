@@ -1,0 +1,90 @@
+{
+    "variables": {
+        "ssh_key_file_path": "{{env `SSH_KEY_FILE_PATH`}}"
+    },
+    "builders": [{
+        "type": "amazon-ebs",
+        "region": "eu-west-1",
+        "source_ami_filter": {
+            "filters": {
+                "virtualization-type": "hvm",
+                "name": "windows-base-openssh-*",
+                "root-device-type": "ebs"
+            },
+            "owners": [
+                "123456789"
+            ],
+            "most_recent": true
+        },
+        "instance_type": "c5a.large",
+        "ami_name": "vs2019-build-tools-{{timestamp}}",
+        "ami_description": "Base Windows + VS 2019 Build Tools Image",
+        "subnet_id": "subnet-123456789",
+        "communicator": "ssh",
+        "ssh_username": "administrator",
+        "ssh_private_key_file": "{{user `ssh_key_file_path`}}",
+        "force_delete_snapshot": true,
+        "ebs_optimized": true,
+        "ami_block_device_mappings": [{
+            "delete_on_termination": true,
+            "device_name": "/dev/sda1",
+            "volume_size": 400,
+            "volume_type": "gp2"
+        }],
+        "launch_block_device_mappings": [{
+            "delete_on_termination": true,
+            "device_name": "/dev/sda1",
+            "volume_size": 200,
+            "volume_type": "gp2"
+        }]
+    }],
+    "provisioners": [{
+            "type": "ansible",
+            "playbook_file": "../ansible/vs2019.windows.ansible.part1.yml",
+            "user": "administrator",
+            "use_proxy": false,
+            "ssh_authorized_key_file": "../ansible/support/administrators_authorized_keys",
+            "extra_arguments": [
+                "-e",
+                "ansible_connection=ssh ansible_ssh_private_key_file={{user `ssh_key_file_path`}} ansible_shell_type=powershell"
+            ]
+        },
+        {
+            "type": "windows-restart"
+        },
+        {
+            "type": "ansible",
+            "pause_before": "30s",
+            "playbook_file": "../ansible/vs2019.windows.ansible.part2.yml",
+            "user": "administrator",
+            "use_proxy": false,
+            "ssh_authorized_key_file": "../ansible/support/administrators_authorized_keys",
+            "extra_arguments": [
+                "-e",
+                "ansible_connection=ssh ansible_ssh_private_key_file={{user `ssh_key_file_path`}} ansible_shell_type=powershell"
+            ]
+        },
+        {
+            "type": "windows-restart"
+        },
+        {
+            "type": "ansible",
+            "pause_before": "30s",
+            "playbook_file": "../ansible/vs2019.windows.ansible.part3.yml",
+            "user": "administrator",
+            "use_proxy": false,
+            "ssh_authorized_key_file": "../ansible/support/administrators_authorized_keys",
+            "extra_arguments": [
+                "-e",
+                "ansible_connection=ssh ansible_ssh_private_key_file={{user `ssh_key_file_path`}} ansible_shell_type=powershell"
+            ]
+        },
+        {
+            "type": "powershell",
+            "inline": [
+                "C:/ProgramData/Amazon/EC2-Windows/Launch/Scripts/InitializeInstance.ps1 -Schedule",
+                "C:/ProgramData/Amazon/EC2-Windows/Launch/Scripts/SysprepInstance.ps1 -NoShutdown"
+            ]
+        }
+    ]
+}
